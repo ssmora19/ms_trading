@@ -1,4 +1,4 @@
-package co.edu.unbosque.ms_trading.model;
+package co.edu.unbosque.ms_trading.model.dto.trade;
 
 
 import lombok.Builder;
@@ -15,6 +15,5 @@ public class OrdenResponse {
     private String quantity;
     private OrderType type;
     private OrderStatus status;
-    private String filledQuantity;
     private String averagePrice;
 }

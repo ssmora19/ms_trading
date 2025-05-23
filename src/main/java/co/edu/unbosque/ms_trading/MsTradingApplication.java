@@ -1,14 +1,18 @@
 package co.edu.unbosque.ms_trading;
 
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import co.edu.unbosque.ms_trading.controller.Market;
-import co.edu.unbosque.ms_trading.controller.MarketSimulator;
-import co.edu.unbosque.ms_trading.model.OrdenRequest;
+import co.edu.unbosque.ms_trading.component.Market;
+import co.edu.unbosque.ms_trading.component.MarketSimulator;
+import co.edu.unbosque.ms_trading.model.dto.trade.OrdenRequest;
 import co.edu.unbosque.ms_trading.service.AlpacaService;
 import co.edu.unbosque.ms_trading.service.ApiService;
 import co.edu.unbosque.ms_trading.service.HistoricalMarketService;
@@ -41,37 +45,48 @@ public class MsTradingApplication implements CommandLineRunner {
     
     @Autowired
     private HistoricalMarketService historicalMarketService;
+
+
+    @Autowired
+    private KafkaTemplate<String, String> kafkaTemplate;
+
+
+
 	@Override
     public void run(String... args) throws Exception {
-        // Este método se ejecuta después de que Spring Boot arranca
-        // System.out.println("----------------------------------------");
-        // System.out.println("¡Aplicación Spring Boot iniciada!");
-        // System.out.println("Ejecutando prueba de Alpaca API desde CommandLineRunner...");
 
+        // Double valor = trader.obtenerPrecioAccion("AAPL");
+        // System.out.println("El valor de la acción es: " + valor);
+        // apiService.enviarSaldo("kperdomof@unbosque.edu.co---");
+        // apiService.actualizarSaldo("kperdomof@unbosque.edu.co", 4500.0);
 
         // trader.mostrarCuentas(); // <-- ¡Aquí llamas a tu método de prueba!
-
-        // System.out.println("Prueba de Alpaca API finalizada.");
-        // System.out.println("----------------------------------------");
 
 
         // boolean marketOpen = alpacaService.getAlpacaApi().trader().clock().getClock().getIsOpen();
         // System.out.println("¿El mercado está abierto? " + marketOpen);
-        // market.startMarketDataStream();
 
         // marketSimulator.startSimulation();
         // trader.mostrarAcciones();
+        // trader.getStocks();
+
+        // -------------------      CRERA UNA ORDEN DE COMPRA O VENTA       -------------------
 
         // OrdenRequest orden = OrdenRequest.builder()
         //         .symbol("TSLA")
         //         .cantidad(1)
         //         .operacion(OrderSide.BUY)
-        //         .tipoOrden(OrderType.STOP)
+        //         .tipoOrden(OrderType.MARKET)
         //         .stopPrice("335.75")
         //         .build();
 
         // Order ejecucion = trader.crearOrden(orden);
         // System.out.println("Orden ejecutada: " + ejecucion);
+
+        // -------------------      REVISRAR UNA ORDEN       -------------------
+
+        // UUID uuid = UUID.fromString("3cd6fe76-b9d6-4765-a2b6-1e10cf4f47ab");
+        // trader.obtenerOrden(uuid);
         
         // trader.mostrarPosiciones();
         // apiService.getUserData();
@@ -116,6 +131,10 @@ public class MsTradingApplication implements CommandLineRunner {
         // historicalMarketService.datosHistoricos();
 
 
+
+
+
+        kafkaTemplate.send("trading-topic", "Hola desde Kafka");
 
 
 

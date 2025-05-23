@@ -15,17 +15,20 @@ broker:
   data:
     porcentage-comision: 2
 
+kafka:
+  bootstrap-servers: localhost:9092
+
 micro-service:
 
   user:
     port: 8080
-    url: http://localhost:8080/
+    url: http://localhost:8081/
     endpoint: usuarios
-    base-url: http://localhost:8080/usuarios
+    base-url: http://localhost:8081/usuario
 
   auditoria:
     port: 8081
-    url: http://localhost:8081/
+    url: http://localhost:8082/
     endpoint: auditoria
     base-url: http://localhost:8081/auditoria
 

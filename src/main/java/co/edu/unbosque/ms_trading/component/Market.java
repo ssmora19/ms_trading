@@ -1,4 +1,4 @@
-package co.edu.unbosque.ms_trading.controller;
+package co.edu.unbosque.ms_trading.component;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -10,9 +10,8 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import co.edu.unbosque.ms_trading.component.MarketWebSocketHandler;
-import co.edu.unbosque.ms_trading.model.BarMessage;
-import co.edu.unbosque.ms_trading.model.TradeMessage;
+import co.edu.unbosque.ms_trading.model.dto.websocket.BarMessage;
+import co.edu.unbosque.ms_trading.model.dto.websocket.TradeMessage;
 import co.edu.unbosque.ms_trading.service.AlpacaService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -30,7 +29,7 @@ public class Market {
     @Autowired
     private MarketWebSocketHandler handler;
 
-    @PostConstruct
+    // @PostConstruct
     public void startMarketDataStream() {
         AlpacaAPI alpacaAPI = alpacaService.getAlpacaApi();
         new Thread(() -> {

@@ -1,15 +1,19 @@
 package co.edu.unbosque.ms_trading.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import co.edu.unbosque.ms_trading.model.OrdenRequest;
-import co.edu.unbosque.ms_trading.model.OrdenResponse;
-import net.jacobpeterson.alpaca.openapi.broker.model.OrderType;
+import co.edu.unbosque.ms_trading.model.dto.StockResponse;
+import co.edu.unbosque.ms_trading.model.dto.trade.OrdenDetail;
+import co.edu.unbosque.ms_trading.model.dto.trade.OrdenRequest;
+import co.edu.unbosque.ms_trading.model.dto.trade.OrdenResponse;
+import net.jacobpeterson.alpaca.openapi.marketdata.model.StockLatestBarsResp;
 import net.jacobpeterson.alpaca.openapi.trader.ApiException;
 import net.jacobpeterson.alpaca.openapi.trader.model.Assets;
 import net.jacobpeterson.alpaca.openapi.trader.model.Order;
@@ -23,21 +27,7 @@ public class TraderService {
     private AlpacaService alpacaService;
 
 
-    public void mostrarPosiciones(){
-        try {
-            alpacaService.getAlpacaApi().trader().positions().getAllOpenPositions()
-                            .forEach(
-                                position -> {
-                                    System.out.println("Symbol: " + position.getSymbol());
-                                    System.out.println("Quantity: " + position.getQty());
-                                    System.out.println("Average Entry Price: " + position.getAvgEntryPrice());
-                                }
-                            );
-        } catch (ApiException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
+    
     /**
      * Crea una orden en el mercado utilizando la solicitud de orden proporcionada.
      *
@@ -45,10 +35,10 @@ public class TraderService {
      * @return la orden creada o lanza una excepción en caso de error
      * @throws ApiException si ocurre un error al comunicarse con la API de Alpaca
      */
-    public Order crearOrden(OrdenRequest orden) throws ApiException {
+    public OrdenResponse crearOrden(OrdenRequest orden) throws ApiException {
         try {
             PostOrderRequest orderRequest = toPostOrderRequest(orden);
-            return alpacaService.getAlpacaApi().trader().orders().postOrder(orderRequest);
+            return toOrdenRequest(alpacaService.getAlpacaApi().trader().orders().postOrder(orderRequest));
         } catch (ApiException e) {
             System.err.println("Error al crear la orden: " + e.getResponseBody());
             throw e; // Re-lanzar la excepción para que el controlador pueda manejarla
@@ -57,14 +47,31 @@ public class TraderService {
             throw new RuntimeException("Error inesperado al crear la orden", e);
         }
     }
-
+    /**
+     * Obtiene el precio actual de una acción dado su símbolo.
+     *
+     * @param symbol el símbolo de la acción (por ejemplo, "AAPL")
+     * @return el precio actual de la acción o null si no se encuentra
+     * @throws ApiException si ocurre un error al comunicarse con la API de Alpaca
+     */
+    public Double obtenerPrecioAccion(String symbol) throws ApiException {
+        try {
+            StockLatestBarsResp barsResp = alpacaService.getAlpacaApi().marketData().stock().stockLatestBars(symbol, null, null);
+            if (barsResp != null && barsResp.getBars() != null && barsResp.getBars().get(symbol) != null) {
+                return barsResp.getBars().get(symbol).getC();
+            }
+        } catch (net.jacobpeterson.alpaca.openapi.marketdata.ApiException e) {
+            System.err.println("Error al obtener el precio de la acción: " + e.getMessage());
+        }
+        return null;
+    }
     /**
      * Convierte un objeto OrdenRequest en un objeto PostOrderRequest.
      *
      * @param orden la solicitud de orden a convertir
      * @return un objeto PostOrderRequest listo para ser enviado a la API de Alpaca
      */
-    public PostOrderRequest toPostOrderRequest(OrdenRequest orden) {
+    private PostOrderRequest toPostOrderRequest(OrdenRequest orden) {
         PostOrderRequest request = new PostOrderRequest()
                 .symbol(orden.getSymbol())
                 .qty(orden.getCantidad().toString())
@@ -99,16 +106,118 @@ public class TraderService {
      * @param order el objeto de orden a convertir
      * @return un objeto OrdenRequest que contiene los detalles de la orden
      */
-    public OrdenResponse toOrdenRequest(Order order) {
+    private OrdenResponse toOrdenRequest(Order order) {
         return OrdenResponse.builder()
                 .symbol(order.getSymbol())
                 .side(order.getSide())
                 .quantity(order.getQty())
                 .type(order.getType())
                 .status(order.getStatus())
-                .filledQuantity(order.getFilledQty())
                 .averagePrice(order.getFilledAvgPrice())
                 .build();
+    }
+
+    
+
+    /**
+     * Obtiene una lista de acciones disponibles en el mercado.
+     * @return una lista de objetos StockResponse que representan las acciones
+     * @throws ApiException si ocurre un error al comunicarse con la API de Alpaca
+     */
+    public List<StockResponse> getStocks() {
+            List<Assets> acciones = alpacaService.getAllUsEquityAssets();
+            List<StockResponse> stockResponses = new ArrayList<>();
+
+            // Obtener los símbolos en lotes de 300
+            List<String> symbolsList = acciones.stream()
+                    .map(Assets::getSymbol)
+                    .collect(Collectors.toList());
+
+            int batchSize = 200;
+            List<List<String>> batches = new ArrayList<>();
+            for (int i = 0; i < symbolsList.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, symbolsList.size());
+                batches.add(symbolsList.subList(i, end));
+            }
+
+            // Ejecutar cada lote en paralelo
+            stockResponses = batches.parallelStream()
+                .flatMap(batch -> {
+                    String symbols = String.join(",", batch);
+                    try {
+                        StockLatestBarsResp barsResp = alpacaService.getAlpacaApi().marketData().stock().stockLatestBars(symbols, null, null);
+                        return batch.stream()
+                                .map(symbol -> {
+                                    Assets accion = acciones.stream().filter(a -> a.getSymbol().equals(symbol)).findFirst().orElse(null);
+                                    if (accion != null && barsResp.getBars().get(symbol) != null) {
+                                        String name = accion.getName();
+                                        Double price = barsResp.getBars().get(symbol).getC();
+                                        return new StockResponse(name, symbol, price);
+                                    }
+                                    return null;
+                                })
+                                .filter(sr -> sr != null);
+                    } catch (net.jacobpeterson.alpaca.openapi.marketdata.ApiException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+                .collect(Collectors.toList());
+
+
+            // Ordenar la lista por nombre de la acción (puedes cambiar a symbol si prefieres)
+            // Usar Collections.sort con un Comparator eficiente para grandes volúmenes
+            stockResponses.sort(java.util.Comparator.comparing(StockResponse::getName, String.CASE_INSENSITIVE_ORDER));
+            return stockResponses;
+
+    }
+
+
+    public OrdenDetail obtenerOrden(UUID uuid){
+
+        try {
+            Order orden = alpacaService.getAlpacaApi().trader().orders().getOrderByOrderID(uuid, null);
+            return toOrdenDetail(orden);
+
+        } catch (ApiException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+
+    }
+    private OrdenDetail toOrdenDetail(Order order) {
+        return OrdenDetail.builder()
+                .id(order.getId())
+                .symbol(order.getSymbol())
+                .status(order.getStatus().name())
+                .orderType(order.getType().name())
+                .side(order.getSide().name())
+                .qty(order.getQty())
+                .limitPrice(order.getLimitPrice())
+                .stopPrice(order.getStopPrice())
+                .filledAvgPrice(order.getFilledAvgPrice())
+                .createdAt(order.getCreatedAt().toString())
+                .updateAt(order.getUpdatedAt().toString())
+                .filledAt(order.getFilledAt().toString())
+                .build();
+    }
+
+    public void mostrarPosiciones(){
+        try {
+            alpacaService.getAlpacaApi().trader().positions().getAllOpenPositions()
+                            .forEach(
+                                position -> {
+                                    // System.out.println("Symbol: " + position.getSymbol());
+                                    // System.out.println("Quantity: " + position.getQty());
+                                    // System.out.println("Average Entry Price: " + position.getAvgEntryPrice());
+                                    System.out.println("Position: " + position);
+                                }
+                            );
+        } catch (ApiException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public void mostrarAcciones() {
@@ -131,16 +240,6 @@ public class TraderService {
             e.printStackTrace();
         }
     }
-    // public Order crearOrden(String symbol, String side, int cantidad) throws
-    // ApiException {
-    // Order order = new Order();
-    // order.setSymbol(symbol);
-    // order.setSide(side);
-    // order.setType("market");
-    // order.setQuantity(cantidad);
-    // order.setTimeInForce("gtc");
-    // return alpacaService.getTraderAPI().orders().createOrder(order);
-    // }
 
     // public void mostrarCuentas() throws ApiException {
     // String cuenta =
@@ -151,32 +250,5 @@ public class TraderService {
     // System.out.println("Account: " + a);
     // }
 
-    // public void informacionFinanciera() throws ApiException, InterruptedException
-    // {
-    // AlpacaAPI alp = alpacaService.getAlpacaApi();
-
-    // alp.stockMarketDataStream().connect();
-    // if(!alp.stockMarketDataStream().waitForAuthorization(5, TimeUnit.SECONDS)) {
-    // throw new RuntimeException("No se pudo conectar al stream de datos de mercado
-    // de Alpaca.");
-    // }
-
-    // alp.stockMarketDataStream().setListener(new StockMarketDataListenerAdapter(){
-    // @Override
-    // public void onTrade(StockTradeMessage trade) {
-    // System.out.println("Trade recibidio: "+ trade);
-    // }
-
-    // });
-
-    // alp.stockMarketDataStream().setTradeSubscriptions(Set.of("AAPL"));
-    // System.out.println("suscripcion a las acciones de AAPL");
-
-    // Thread.sleep(5000);
-
-    // alp.stockMarketDataStream().disconnect();
-    // System.out.println("Desconectado del stream de datos de mercado de Alpaca.");
-
-    // }
 
 }

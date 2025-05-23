@@ -9,9 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import co.edu.unbosque.ms_trading.excepcion.StockNotFoundException;
-import co.edu.unbosque.ms_trading.model.StockBarDTO;
-import co.edu.unbosque.ms_trading.model.StockHistoryRequest;
-import co.edu.unbosque.ms_trading.model.StockLineDTO;
+import co.edu.unbosque.ms_trading.model.dto.history.StockBarDTO;
+import co.edu.unbosque.ms_trading.model.dto.history.StockHistoryRequest;
+import co.edu.unbosque.ms_trading.model.dto.history.StockLineDTO;
 import net.jacobpeterson.alpaca.openapi.marketdata.ApiException;
 import net.jacobpeterson.alpaca.openapi.marketdata.model.StockBar;
 import net.jacobpeterson.alpaca.openapi.marketdata.model.StockBarsResp;

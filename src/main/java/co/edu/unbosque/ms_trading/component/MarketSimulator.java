@@ -1,4 +1,4 @@
-package co.edu.unbosque.ms_trading.controller;
+package co.edu.unbosque.ms_trading.component;
 
 import java.time.Instant;
 import java.util.Random;
@@ -9,9 +9,8 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import co.edu.unbosque.ms_trading.component.MarketWebSocketHandler;
-import co.edu.unbosque.ms_trading.model.BarMessage;
-import co.edu.unbosque.ms_trading.model.TradeMessage;
+import co.edu.unbosque.ms_trading.model.dto.websocket.BarMessage;
+import co.edu.unbosque.ms_trading.model.dto.websocket.TradeMessage;
 import jakarta.annotation.PreDestroy;
 
 @Component

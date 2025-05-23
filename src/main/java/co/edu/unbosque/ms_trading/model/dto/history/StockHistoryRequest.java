@@ -1,4 +1,4 @@
-package co.edu.unbosque.ms_trading.model;
+package co.edu.unbosque.ms_trading.model.dto.history;
 
 import lombok.Data;
 
