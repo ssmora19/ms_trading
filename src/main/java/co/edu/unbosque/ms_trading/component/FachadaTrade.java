@@ -11,8 +11,8 @@ import co.edu.unbosque.ms_trading.model.dto.trade.OrdenRequest;
 import co.edu.unbosque.ms_trading.model.dto.trade.OrdenResponse;
 import co.edu.unbosque.ms_trading.service.ApiService;
 import co.edu.unbosque.ms_trading.service.TraderService;
-import net.jacobpeterson.alpaca.openapi.broker.model.OrderSide;
 import net.jacobpeterson.alpaca.openapi.trader.ApiException;
+import net.jacobpeterson.alpaca.openapi.trader.model.OrderSide;
 
 @Component
 public class FachadaTrade {
@@ -33,7 +33,6 @@ public class FachadaTrade {
         try {
             String saldoJson = apiService.enviarSaldo(userId);
 
-            System.out.println(saldoJson);
             if (orden.getOperacion().equals(OrderSide.BUY)) {
 
                 double saldo = 0;
@@ -49,6 +48,7 @@ public class FachadaTrade {
                     throw new InsufficientBalanceException("No hay saldo suficiente para realizar la compra");
                 }
                 response = traderService.crearOrden(orden);
+                System.out.println("Esta es la orden realizada" + response);
                 Double nuevoSaldo = saldo - (stockPrice * orden.getCantidad());
                 apiService.actualizarSaldo(userId, nuevoSaldo);
                 return response;

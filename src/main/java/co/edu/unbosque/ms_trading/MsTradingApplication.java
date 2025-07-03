@@ -66,7 +66,7 @@ public class MsTradingApplication implements CommandLineRunner {
         // boolean marketOpen = alpacaService.getAlpacaApi().trader().clock().getClock().getIsOpen();
         // System.out.println("¿El mercado está abierto? " + marketOpen);
 
-        // marketSimulator.startSimulation();
+        marketSimulator.startSimulation();
         // trader.mostrarAcciones();
         // trader.getStocks();
 

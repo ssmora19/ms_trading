@@ -29,7 +29,7 @@ public class Market {
     @Autowired
     private MarketWebSocketHandler handler;
 
-    // @PostConstruct
+     /* @PostConstruct
     public void startMarketDataStream() {
         AlpacaAPI alpacaAPI = alpacaService.getAlpacaApi();
         new Thread(() -> {
@@ -94,7 +94,7 @@ public class Market {
                 e.printStackTrace();
             }
         }).start();
-    }
+    }*/
 
     public synchronized void subscribeToSymbol(String symbol) {
         try {

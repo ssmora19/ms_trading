@@ -63,7 +63,7 @@ public class MarketWebSocketHandler /* extends TextWebSocketHandler */ implement
     public void sendMessageToAll(String message) {
         // System.out.println("Numero de sesiones activas: " + sesiones.size());
         if(sesiones.isEmpty()){
-            System.out.println("No hay sesiones activas");
+            // System.out.println("No hay sesiones activas");
             return;
         }
         for (WebSocketSession session : sesiones) {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,6 +20,7 @@ import co.edu.unbosque.ms_trading.service.TraderService;
 
 @RestController
 @RequestMapping("/trade")
+@CrossOrigin(origins = { "http://localhost:3000" })
 public class TradeController {
     
     @Autowired
@@ -39,8 +41,10 @@ public class TradeController {
      */
     @PostMapping("Order/{user-id}")
     public ResponseEntity<OrdenResponse> createOrder(@PathVariable("user-id") String userId, @RequestBody OrdenRequest orden) {
+        System.out.println(orden);
         return ResponseEntity.ok(traderService.createOrder(userId, orden));
     }
+
 
 
     // /**
